@@ -149,7 +149,7 @@ view: order_items {
     sql:  ${TABLE}.returned_at is not null ;;
   }
 
-  measure: order_id_cnt {
+  measure: order_count {
     type: count_distinct
     sql: ${order_id};;
   }
@@ -159,9 +159,6 @@ view: order_items {
     sql: ${order_id};;
     filters: [created_date: "yesterday"]
   }
-
-
-
 
   measure: number_of_items_returned {
     description: "Number of items that were returned by dissatisfied customers"
@@ -223,6 +220,16 @@ measure: total_gross_revenue {
   # is this right?  How would I check this?
 }
 
+
+measure: total_revenue {
+  description: "Total revenue from completed sales (cancelled and returned orders excluded)"
+  type: sum
+  value_format_name: usd
+  sql:  ${sale_price} ;;
+  filters: [return_indicator: "no", delivered_date: "-NULL"]
+  drill_fields: [detail2*]
+
+}
 
 
 
@@ -334,6 +341,84 @@ measure: percent_of_total_gross_margin {
       total_gross_revenue,
       average_spend_per_customer
       ]
+  }
+
+
+
+#*************************************************************
+#*************************************************************filters & liquid parameters
+
+#******************************************Parameters
+  parameter: desired_metric {
+    type: unquoted
+    allowed_value: {
+      label: "Order Count"
+      value: "order_cnt"
+    }
+    allowed_value: {
+      label: "Items Sold"
+      value: "number_of_items_sold"
+    }
+    allowed_value: {
+      label: "Revenue"
+      value: "total_revenue"
+    }
+    allowed_value: {
+      label: "This is a test"
+      value: "tester"
+    }
+  }
+
+
+  measure: desired_metric_measure {
+    type: number
+    sql:
+      {% if desired_metric._parameter_value == 'order_cnt' %}
+        ${order_count}
+      {% elsif desired_metric._parameter_value =='number_of_items_sold' %}
+        ${number_of_items_sold}
+      {% elsif desired_metric._parameter_value =='total_revenue' %}
+        ${total_revenue}
+      {% else %}
+        null
+      {% endif %} ;;
+    label_from_parameter: desired_metric
+    value_format: "[>=1000000000]0.0,,,\"B\";[>=1000000]0.0,,\"M\";[>=1000]0.0,\"K\";0.0"
+    html:
+    {% if desired_metric._parameter_value == 'order_cnt' %}
+    {{ rendered_value }}
+    {% elsif desired_metric._parameter_value == 'number_of_items_sold' %}
+    {{ rendered_value }}
+    {% elsif desired_metric._parameter_value == 'total_revenue' %}
+    ${{ rendered_value }}
+    {% endif %}
+
+      ;;
+  }
+#****************************************************************************************************************************
+
+
+  parameter: event_selector {
+    type: string
+    allowed_value: {
+      label: "Ordered Date"
+      value:"created"
+    }
+    allowed_value: {
+      label: "Returned Date"
+      value:"returned"
+    }
+  }
+
+    dimension: event_selector_dimension{
+    type: date
+    label_from_parameter: event_selector
+    sql: case
+          when {% parameter event_selector %} = 'created' then ${created_raw}
+          when {% parameter event_selector %} = 'returned' then ${returned_raw}
+          else null
+          end
+      ;;
   }
 
 }

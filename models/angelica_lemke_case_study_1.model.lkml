@@ -1,8 +1,15 @@
 # Define the database connection to be used for this model.
-connection: "looker_partner_demo"
+ connection: "looker_partner_demo"
+
 
 # include all the views
 include: "/views/**/*.view"
+
+access_grant: user_dob_access {
+  user_attribute: can_view_user_dob
+  allowed_values: [ "yes" ]
+}
+
 
 # Datagroups define a caching policy for an Explore. To learn more,
 # use the Quick Help panel on the right to see documentation.
@@ -64,6 +71,7 @@ explore: products {
 
 explore: order_items {
 
+
   join: order_items_repurchase_facts {
     type: left_outer
     sql_on: ${order_items.id}=${order_items_repurchase_facts.order_id} ;;
@@ -100,20 +108,14 @@ explore: order_items {
     relationship: many_to_one
   }
 
-
-  #join: order_sequence {
-  #  type: left_outer
-  #  sql_on: ${order_items.user_id} = ${order_sequence.user_id} ;;
-  #  relationship: many_to_one
-  #}
-}
-
-explore: users {}
+  }
 
 explore: events {
-  join: users {
-    type: left_outer
-    sql_on: ${events.user_id} = ${users.id} ;;
-    relationship: many_to_one
+  access_filter: {
+    field: events.city
+    #user_attribute: allowed_city
+    user_attribute: allowed_region
   }
 }
+
+explore: user_order_facts {}

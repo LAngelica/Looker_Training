@@ -4,24 +4,113 @@ view: users {
   # to be used for all fields in this view.
   sql_table_name: `thelook.users`
     ;;
-  drill_fields: [id]
-  # This primary key is the unique key for this table in the underlying database.
-  # You need to define a primary key in a view in order to join to other views.
 
+#*************************************************************Dimension Examples (7)
   dimension: id {
     primary_key: yes
+    hidden:  yes
     type: number
     sql: ${TABLE}.id ;;
   }
+
+  dimension: gender {
+    type: string
+    sql: ${TABLE}.gender ;;
+  }
+
+  dimension: age {
+    type: number
+    sql: ${TABLE}.age + 2;;
+  }
+
+  dimension: first_name {
+    type: string
+    sql: ${TABLE}.first_name ;;
+  }
+
+  dimension: last_name {
+    type: string
+    sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: complete_name {
+    type: string
+    sql: concat(${last_name}, ', ',${first_name}) ;;
+  }
+
+  dimension: traffic_source {
+    type: string
+    sql: ${TABLE}.traffic_source ;;
+  }
+
+  dimension: first_initial {
+    type: string
+    sql: substring(${first_name},1,1) ;;
+
+  }
+
+#*************************************************************Measure Examples
+  measure: user_id {
+    type: count
+#    sql: ${id} ;;
+  }
+
+  measure: average_age {
+    type: average
+    label: "Average Age-Modified"
+    description: "Average age has been modified."
+    sql: ${age} ;;
+  }
+
+#*************************************************************
+#*************************************************************
+#*************************************************************
+#*************************************************************
+#*************************************************************
+#*************************************************************
+#*************************************************************
+#*************************************************************
+
+  dimension_group: created {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      month_name,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.created_at ;;
+  }
+
+  measure: latest_created {
+    type: date
+    sql: max(${created_raw}) ;;
+  }
+
+
+  measure: earliest_created {
+    type: date
+    sql: min(${created_raw}) ;;
+
+  }
+
+
+
+
+
+
+
+
 
   # Here's what a typical dimension looks like in LookML.
   # A dimension is a groupable field that can be used to filter query results.
   # This dimension will be called "Age" in Explore.
 
-  dimension: age {
-    type: number
-    sql: ${TABLE}.age ;;
-  }
+
 
 
   dimension: age_tier {
@@ -40,10 +129,7 @@ view: users {
     sql: ${age} ;;
   }
 
-  measure: average_age {
-    type: average
-    sql: ${age} ;;
-  }
+
 
   dimension: city {
     type: string
@@ -59,20 +145,6 @@ view: users {
   # Dates and timestamps can be represented in Looker using a dimension group of type: time.
   # Looker converts dates and timestamps to the specified timeframes within the dimension group.
 
-  dimension_group: created {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      month_name,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.created_at ;;
-  }
 
   dimension_group: since_signup {
     type: duration
@@ -101,20 +173,16 @@ view: users {
     sql: ${TABLE}.email ;;
   }
 
-  dimension: first_name {
-    type: string
-    sql: ${TABLE}.first_name ;;
+
+
+  dimension: dob {
+    type: date
+    sql: ${TABLE}.dob ;;
+    required_access_grants: [user_dob_access]
   }
 
-  dimension: gender {
-    type: string
-    sql: ${TABLE}.gender ;;
-  }
 
-  dimension: last_name {
-    type: string
-    sql: ${TABLE}.last_name ;;
-  }
+
 
   dimension: latitude {
     type: number
@@ -143,10 +211,7 @@ view: users {
     sql: ${TABLE}.street_address ;;
   }
 
-  dimension: traffic_source {
-    type: string
-    sql: ${TABLE}.traffic_source ;;
-  }
+
 
   measure: new_user_yesterday {
     type: count_distinct
@@ -154,10 +219,7 @@ view: users {
     filters: [created_date: "yesterday"]
   }
 
-  measure: user_id {
-    type: count_distinct
-    sql: ${id} ;;
-  }
+
 
   measure: new_users_yesterday {
     type: count
